@@ -14,4 +14,4 @@
 
 set -e
 
-bender vsim -t test
+bender vsim -t test --vlog-arg="-svinputport=compat" 

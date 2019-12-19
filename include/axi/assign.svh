@@ -308,13 +308,13 @@
 
 `define AXI_LITE_ASSIGN_TO_AW(aw_lite_struct, axi_lite_if) \
   assign aw_lite_struct = '{                               \
-    addr:    axi_if.aw_addr                                \
+    addr:    axi_lite_if.aw_addr,                          \
     default: '0                                            \
   };
   // prot not in interface!
 
 `define AXI_LITE_ASSIGN_FROM_AW(axi_lite_if, aw_lite_struct) \
-  assign axi_if.aw_addr   = aw_struct.addr;
+  assign axi_lite_if.aw_addr   = aw_struct.addr;
   // prot not in interface!
 
 `define AXI_LITE_ASSIGN_TO_W(w_lite_struct, axi_lite_if) \
@@ -339,11 +339,11 @@
   assign ar_lite_struct = '{                               \
     addr:    axi_lite_if.ar_addr,                          \
     default: '0                                            \
-  };
+  };                                                       \
   // prot not in interface!
 
 `define AXI_LITE_ASSIGN_FROM_AR(axi_lite_if, ar_lite_struct) \
-  assign axi_lite_if.ar_addr   = ar_lite_struct.addr;
+  assign axi_lite_if.ar_addr   = ar_lite_struct.addr;        \
   // prot not in interface!
 
 `define AXI_LITE_ASSIGN_TO_R(r_lite_struct, axi_lite_if) \
