@@ -14,16 +14,16 @@
 
 module axi_burst_splitter #(
   // Maximum number of AXI read bursts outstanding at the same time
-  parameter int unsigned MAX_READ_TXNS = 0,
+  parameter int unsigned MaxReadTxns = 0,
   // Maximum number of AXI write bursts outstanding at the same time
-  parameter int unsigned MAX_WRITE_TXNS = 0,
+  parameter int unsigned MaxWriteTxns = 0,
   // AXI Bus Types
-  parameter int unsigned AW = 0,
-  parameter int unsigned DW = 0,
-  parameter int unsigned IW = 0,
-  parameter int unsigned UW = 0,
-  parameter type req_t = logic,
-  parameter type resp_t = logic
+  parameter int unsigned AddrWidth = 0,
+  parameter int unsigned DataWidth = 0,
+  parameter int unsigned IdWidth   = 0,
+  parameter int unsigned UserWidth = 0,
+  parameter type         req_t     = logic,
+  parameter type         resp_t    = logic
 ) (
   input  logic  clk_i,
   input  logic  rst_ni,
@@ -37,9 +37,9 @@ module axi_burst_splitter #(
   input  resp_t resp_i
 );
 
-  typedef logic [IW-1:0] id_t;
-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, logic[AW-1:0], id_t, logic[UW-1:0]);
-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, logic[AW-1:0], id_t, logic[UW-1:0]);
+  typedef logic [IdWidth-1:0] id_t;
+  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, logic[AddrWidth-1:0], id_t, logic[UserWidth-1:0]);
+  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, logic[AddrWidth-1:0], id_t, logic[UserWidth-1:0]);
 
   // --------------------------------------------------
   // AW Channel
@@ -47,25 +47,25 @@ module axi_burst_splitter #(
   logic           w_cnt_dec, w_cnt_req, w_cnt_gnt, w_cnt_err;
   axi_pkg::len_t  w_cnt_len;
   axi_burst_splitter_ax_chan #(
-    .chan_t   (aw_chan_t),
-    .IW       (IW),
-    .MAX_TXNS (MAX_WRITE_TXNS)
+    .chan_t   ( aw_chan_t    ),
+    .IdWidth  ( IdWidth      ),
+    .MaxTxns  ( MaxWriteTxns )
   ) i_aw_chan (
     .clk_i,
     .rst_ni,
-    .ax_i           (req_i.aw),
-    .ax_valid_i     (req_i.aw_valid),
-    .ax_ready_o     (resp_o.aw_ready),
-    .ax_o           (req_o.aw),
-    .ax_valid_o     (req_o.aw_valid),
-    .ax_ready_i     (resp_i.aw_ready),
-    .cnt_id_i       (resp_i.b.id),
-    .cnt_len_o      (w_cnt_len),
-    .cnt_set_err_i  (resp_i.b.resp[1]),
-    .cnt_err_o      (w_cnt_err),
-    .cnt_dec_i      (w_cnt_dec),
-    .cnt_req_i      (w_cnt_req),
-    .cnt_gnt_o      (w_cnt_gnt)
+    .ax_i           ( req_i.aw         ),
+    .ax_valid_i     ( req_i.aw_valid   ),
+    .ax_ready_o     ( resp_o.aw_ready  ),
+    .ax_o           ( req_o.aw         ),
+    .ax_valid_o     ( req_o.aw_valid   ),
+    .ax_ready_i     ( resp_i.aw_ready  ),
+    .cnt_id_i       ( resp_i.b.id      ),
+    .cnt_len_o      ( w_cnt_len        ),
+    .cnt_set_err_i  ( resp_i.b.resp[1] ),
+    .cnt_err_o      ( w_cnt_err        ),
+    .cnt_dec_i      ( w_cnt_dec        ),
+    .cnt_req_i      ( w_cnt_req        ),
+    .cnt_gnt_o      ( w_cnt_gnt        )
   );
 
   // --------------------------------------------------
@@ -73,10 +73,10 @@ module axi_burst_splitter #(
   // --------------------------------------------------
   // Feed through, except `last`, which is always set.
   always_comb begin
-    req_o.w = req_i.w;
-    req_o.w.last = 1'b1;
+    req_o.w        = req_i.w;
+    req_o.w.last   = 1'b1;
     resp_o.w_ready = resp_i.w_ready;
-    req_o.w_valid = req_i.w_valid;
+    req_o.w_valid  = req_i.w_valid;
   end
 
   // --------------------------------------------------
@@ -86,13 +86,13 @@ module axi_burst_splitter #(
   enum logic {BReady, BWait} b_state_d, b_state_q;
   logic b_err_d, b_err_q;
   always_comb begin
-    req_o.b_ready = 1'b0;
-    resp_o.b = '0;
+    req_o.b_ready  = 1'b0;
+    resp_o.b       = '0;
     resp_o.b_valid = 1'b0;
-    w_cnt_dec = 1'b0;
-    w_cnt_req = 1'b0;
-    b_err_d = b_err_q;
-    b_state_d = b_state_q;
+    w_cnt_dec      = 1'b0;
+    w_cnt_req      = 1'b0;
+    b_err_d        = b_err_q;
+    b_state_d      = b_state_q;
 
     case (b_state_q)
       BReady: begin
@@ -100,30 +100,30 @@ module axi_burst_splitter #(
           w_cnt_req = 1'b1;
           if (w_cnt_gnt) begin
             if (w_cnt_len == 8'd0) begin
-              resp_o.b = resp_i.b;
+              resp_o.b         = resp_i.b;
               resp_o.b.resp[1] = w_cnt_err;
-              resp_o.b_valid = 1'b1;
-              w_cnt_dec = 1'b1;
+              resp_o.b_valid   = 1'b1;
+              w_cnt_dec        = 1'b1;
               if (req_i.b_ready) begin
                 req_o.b_ready = 1'b1;
               end else begin
                 b_state_d = BWait;
-                b_err_d = w_cnt_err;
+                b_err_d   = w_cnt_err;
               end
             end else begin
               req_o.b_ready = 1'b1;
-              w_cnt_dec = 1'b1;
+              w_cnt_dec     = 1'b1;
             end
           end
         end
       end
       BWait: begin
-        resp_o.b = resp_i.b;
+        resp_o.b         = resp_i.b;
         resp_o.b.resp[1] = b_err_q;
-        resp_o.b_valid = 1'b1;
+        resp_o.b_valid   = 1'b1;
         if (resp_i.b_valid && req_i.b_ready) begin
           req_o.b_ready = 1'b1;
-          b_state_d = BReady;
+          b_state_d     = BReady;
         end
       end
       default: b_state_d = BReady;
@@ -137,25 +137,25 @@ module axi_burst_splitter #(
   logic           r_cnt_dec, r_cnt_req, r_cnt_gnt;
   axi_pkg::len_t  r_cnt_len;
   axi_burst_splitter_ax_chan #(
-    .chan_t   (ar_chan_t),
-    .IW       (IW),
-    .MAX_TXNS (MAX_READ_TXNS)
+    .chan_t   ( ar_chan_t   ),
+    .IdWidth  ( IdWidth     ),
+    .MaxTxns  ( MaxReadTxns )
   ) i_ar_chan (
     .clk_i,
     .rst_ni,
-    .ax_i           (req_i.ar),
-    .ax_valid_i     (req_i.ar_valid),
-    .ax_ready_o     (resp_o.ar_ready),
-    .ax_o           (req_o.ar),
-    .ax_valid_o     (req_o.ar_valid),
-    .ax_ready_i     (resp_i.ar_ready),
-    .cnt_id_i       (resp_i.r.id),
-    .cnt_len_o      (r_cnt_len),
-    .cnt_set_err_i  (1'b0),
-    .cnt_err_o      (),
-    .cnt_dec_i      (r_cnt_dec),
-    .cnt_req_i      (r_cnt_req),
-    .cnt_gnt_o      (r_cnt_gnt)
+    .ax_i           ( req_i.ar        ),
+    .ax_valid_i     ( req_i.ar_valid  ),
+    .ax_ready_o     ( resp_o.ar_ready ),
+    .ax_o           ( req_o.ar        ),
+    .ax_valid_o     ( req_o.ar_valid  ),
+    .ax_ready_i     ( resp_i.ar_ready ),
+    .cnt_id_i       ( resp_i.r.id     ),
+    .cnt_len_o      ( r_cnt_len       ),
+    .cnt_set_err_i  ( 1'b0            ),
+    .cnt_err_o      (                 ),
+    .cnt_dec_i      ( r_cnt_dec       ),
+    .cnt_req_i      ( r_cnt_req       ),
+    .cnt_gnt_o      ( r_cnt_gnt       )
   );
 
   // --------------------------------------------------
@@ -165,13 +165,13 @@ module axi_burst_splitter #(
   logic r_last_d, r_last_q;
   enum logic {RFeedthrough, RWait} r_state_d, r_state_q;
   always_comb begin
-    r_cnt_dec = 1'b0;
-    r_cnt_req = 1'b0;
-    r_last_d = r_last_q;
-    r_state_d = r_state_q;
-    req_o.r_ready = 1'b0;
-    resp_o.r = resp_i.r;
-    resp_o.r.last = 1'b0;
+    r_cnt_dec      = 1'b0;
+    r_cnt_req      = 1'b0;
+    r_last_d       = r_last_q;
+    r_state_d      = r_state_q;
+    req_o.r_ready  = 1'b0;
+    resp_o.r       = resp_i.r;
+    resp_o.r.last  = 1'b0;
     resp_o.r_valid = 1'b0;
 
     case (r_state_q)
@@ -182,9 +182,9 @@ module axi_burst_splitter #(
           r_cnt_req = 1'b1;
           if (r_cnt_gnt) begin
             r_last_d = (r_cnt_len == 8'd0);
-            resp_o.r.last = r_last_d;
+            resp_o.r.last  = r_last_d;
             // Decrement the counter.
-            r_cnt_dec = 1'b1;
+            r_cnt_dec      = 1'b1;
             // Try to forward the beat upstream.
             resp_o.r_valid = 1'b1;
             if (req_i.r_ready) begin
@@ -198,11 +198,11 @@ module axi_burst_splitter #(
         end
       end
       RWait: begin
-        resp_o.r.last = r_last_q;
+        resp_o.r.last  = r_last_q;
         resp_o.r_valid = resp_i.r_valid;
         if (resp_i.r_valid && req_i.r_ready) begin
           req_o.r_ready = 1'b1;
-          r_state_d = RFeedthrough;
+          r_state_d     = RFeedthrough;
         end
       end
       default: r_state_d = RFeedthrough;
@@ -259,10 +259,10 @@ endmodule
 // Store burst lengths in counters, which are associated to AXI IDs through ID queues (to allow
 // reordering of responses w.r.t. requests).
 module axi_burst_splitter_ax_chan #(
-  parameter type chan_t = logic,
-  parameter int unsigned IW = 0,
-  parameter int unsigned MAX_TXNS = 0,
-  parameter type id_t = logic[IW-1:0]
+  parameter type         chan_t  = logic,
+  parameter int unsigned IdWidth = 0,
+  parameter int unsigned MaxTxns = 0,
+  parameter type         id_t    = logic[IdWidth-1:0]
 ) (
   input  logic          clk_i,
   input  logic          rst_ni,
@@ -282,26 +282,26 @@ module axi_burst_splitter_ax_chan #(
   input  logic          cnt_req_i,
   output logic          cnt_gnt_o
 );
-  typedef logic[IW-1:0] cnt_id_t;
+  typedef logic[IdWidth-1:0] cnt_id_t;
 
   logic cnt_alloc_req, cnt_alloc_gnt;
   axi_burst_splitter_counters #(
-    .MAX_TXNS (MAX_TXNS),
-    .IW      (IW)
+    .MaxTxns ( MaxTxns ),
+    .IdWidth ( IdWidth  )
   ) i_cntrs (
     .clk_i,
     .rst_ni,
-    .alloc_id_i     (ax_i.id),
-    .alloc_len_i    (ax_i.len),
-    .alloc_req_i    (cnt_alloc_req),
-    .alloc_gnt_o    (cnt_alloc_gnt),
-    .read_id_i      (cnt_id_i),
-    .read_len_o     (cnt_len_o),
-    .read_set_err_i (cnt_set_err_i),
-    .read_err_o     (cnt_err_o),
-    .read_dec_i     (cnt_dec_i),
-    .read_req_i     (cnt_req_i),
-    .read_gnt_o     (cnt_gnt_o)
+    .alloc_id_i     ( ax_i.id       ),
+    .alloc_len_i    ( ax_i.len      ),
+    .alloc_req_i    ( cnt_alloc_req ),
+    .alloc_gnt_o    ( cnt_alloc_gnt ),
+    .read_id_i      ( cnt_id_i      ),
+    .read_len_o     ( cnt_len_o     ),
+    .read_set_err_i ( cnt_set_err_i ),
+    .read_err_o     ( cnt_err_o     ),
+    .read_dec_i     ( cnt_dec_i     ),
+    .read_req_i     ( cnt_req_i     ),
+    .read_gnt_o     ( cnt_gnt_o     )
   );
 
   chan_t ax_d, ax_q;
@@ -309,30 +309,30 @@ module axi_burst_splitter_ax_chan #(
   enum logic {Idle, Busy} state_d, state_q;
   always_comb begin
     cnt_alloc_req = 1'b0;
-    ax_d = ax_q;
-    state_d = state_q;
-    ax_o = '0;
-    ax_valid_o = 1'b0;
-    ax_ready_o = 1'b0;
+    ax_d          = ax_q;
+    state_d       = state_q;
+    ax_o          = '0;
+    ax_valid_o    = 1'b0;
+    ax_ready_o    = 1'b0;
     case (state_q)
       Idle: begin
         if (ax_valid_i && cnt_alloc_gnt) begin
           if (ax_i.len == '0) begin // No splitting required -> feed through.
-            ax_o = ax_i;
+            ax_o       = ax_i;
             ax_valid_o = 1'b1;
             // As soon as downstream is ready, allocate a counter and acknowledge upstream.
             if (ax_ready_i) begin
               cnt_alloc_req = 1'b1;
-              ax_ready_o = 1'b1;
+              ax_ready_o    = 1'b1;
             end
           end else begin // Splitting required.
             // Store Ax, allocate a counter, and acknowledge upstream.
-            ax_d = ax_i;
+            ax_d          = ax_i;
             cnt_alloc_req = 1'b1;
-            ax_ready_o = 1'b1;
+            ax_ready_o    = 1'b1;
             // Try to feed first burst through.
-            ax_o = ax_d;
-            ax_o.len = '0;
+            ax_o       = ax_d;
+            ax_o.len   = '0;
             ax_valid_o = 1'b1;
             if (ax_ready_i) begin
               // Reduce number of bursts still to be sent by one and increment address.
@@ -347,8 +347,8 @@ module axi_burst_splitter_ax_chan #(
       end
       Busy: begin
         // Sent next burst from split.
-        ax_o = ax_q;
-        ax_o.len = '0;
+        ax_o       = ax_q;
+        ax_o.len   = '0;
         ax_valid_o = 1'b1;
         if (ax_ready_i) begin
           if (ax_q.len == '0) begin
@@ -380,9 +380,9 @@ module axi_burst_splitter_ax_chan #(
 endmodule
 
 module axi_burst_splitter_counters #(
-  parameter int unsigned MAX_TXNS = 0,
-  parameter int unsigned IW = 0,
-  parameter type id_t = logic [IW-1:0]
+  parameter int unsigned MaxTxns = 0,
+  parameter int unsigned IdWidth = 0,
+  parameter type         id_t    = logic [IdWidth-1:0]
 ) (
   input  logic          clk_i,
   input  logic          rst_ni,
@@ -400,87 +400,87 @@ module axi_burst_splitter_counters #(
   input  logic          read_req_i,
   output logic          read_gnt_o
 );
-  localparam int unsigned CNT_IDX_WIDTH = (MAX_TXNS > 1) ? $clog2(MAX_TXNS) : 32'd1;
-  typedef logic [CNT_IDX_WIDTH-1:0] cnt_idx_t;
+  localparam int unsigned CntIdxWidth = (MaxTxns > 1) ? $clog2(MaxTxns) : 32'd1;
+  typedef logic [CntIdxWidth-1:0]         cnt_idx_t;
   typedef logic [$bits(axi_pkg::len_t):0] cnt_t;
-  logic [MAX_TXNS-1:0]  cnt_dec, cnt_free, cnt_set, err_d, err_q;
-  cnt_t                 cnt_inp;
-  cnt_t [MAX_TXNS-1:0]  cnt_oup;
-  cnt_idx_t             cnt_free_idx, cnt_r_idx;
-  for (genvar i = 0; i < MAX_TXNS; i++) begin : gen_cnt
+  logic [MaxTxns-1:0]  cnt_dec, cnt_free, cnt_set, err_d, err_q;
+  cnt_t                cnt_inp;
+  cnt_t [MaxTxns-1:0]  cnt_oup;
+  cnt_idx_t            cnt_free_idx, cnt_r_idx;
+  for (genvar i = 0; i < MaxTxns; i++) begin : gen_cnt
     counter #(
-      .WIDTH ($bits(cnt_t))
+      .WIDTH ( $bits(cnt_t) )
     ) i_cnt (
       .clk_i,
       .rst_ni,
-      .clear_i    (1'b0),
-      .en_i       (cnt_dec[i]),
-      .load_i     (cnt_set[i]),
-      .down_i     (1'b1),
-      .d_i        (cnt_inp),
-      .q_o        (cnt_oup[i]),
-      .overflow_o ()
+      .clear_i    ( 1'b0       ),
+      .en_i       ( cnt_dec[i] ),
+      .load_i     ( cnt_set[i] ),
+      .down_i     ( 1'b1       ),
+      .d_i        ( cnt_inp    ),
+      .q_o        ( cnt_oup[i] ),
+      .overflow_o (            )  // not used
     );
     assign cnt_free[i] = (cnt_oup[i] == '0);
   end
   assign cnt_inp = {1'b0, alloc_len_i} + 1;
 
   lzc #(
-    .WIDTH  (MAX_TXNS),
-    .MODE   (1'b0)  // start counting at index 0
+    .WIDTH  ( MaxTxns ),
+    .MODE   ( 1'b0    )  // start counting at index 0
   ) i_lzc (
-    .in_i     (cnt_free),
-    .cnt_o    (cnt_free_idx),
-    .empty_o  ()
+    .in_i    ( cnt_free     ),
+    .cnt_o   ( cnt_free_idx ),
+    .empty_o (              )
   );
 
   logic idq_inp_req, idq_inp_gnt,
         idq_oup_gnt, idq_oup_valid, idq_oup_pop;
   id_queue #(
-    .ID_WIDTH ($bits(id_t)),
-    .CAPACITY (MAX_TXNS),
-    .data_t   (cnt_idx_t)
+    .ID_WIDTH ( $bits(id_t) ),
+    .CAPACITY ( MaxTxns     ),
+    .data_t   ( cnt_idx_t   )
   ) i_idq (
     .clk_i,
     .rst_ni,
-    .inp_id_i         (alloc_id_i),
-    .inp_data_i       (cnt_free_idx),
-    .inp_req_i        (idq_inp_req),
-    .inp_gnt_o        (idq_inp_gnt),
-    .exists_data_i    ('0),
-    .exists_mask_i    ('0),
-    .exists_req_i     (1'b0),
+    .inp_id_i         ( alloc_id_i    ),
+    .inp_data_i       ( cnt_free_idx  ),
+    .inp_req_i        ( idq_inp_req   ),
+    .inp_gnt_o        ( idq_inp_gnt   ),
+    .exists_data_i    ( '0            ),
+    .exists_mask_i    ( '0            ),
+    .exists_req_i     ( 1'b0          ),
     .exists_o         (/* keep open */),
     .exists_gnt_o     (/* keep open */),
-    .oup_id_i         (read_id_i),
-    .oup_pop_i        (idq_oup_pop),
-    .oup_req_i        (read_req_i),
-    .oup_data_o       (cnt_r_idx),
-    .oup_data_valid_o (idq_oup_valid),
-    .oup_gnt_o        (idq_oup_gnt)
+    .oup_id_i         ( read_id_i     ),
+    .oup_pop_i        ( idq_oup_pop   ),
+    .oup_req_i        ( read_req_i    ),
+    .oup_data_o       ( cnt_r_idx     ),
+    .oup_data_valid_o ( idq_oup_valid ),
+    .oup_gnt_o        ( idq_oup_gnt   )
   );
   assign idq_inp_req = alloc_req_i & alloc_gnt_o;
   assign alloc_gnt_o = idq_inp_gnt & |(cnt_free);
-  assign read_gnt_o = idq_oup_gnt & idq_oup_valid;
+  assign read_gnt_o  = idq_oup_gnt & idq_oup_valid;
   logic [8:0] read_len;
-  assign read_len = cnt_oup[cnt_r_idx] - 1;
-  assign read_len_o = read_len[7:0];
+  assign read_len    = cnt_oup[cnt_r_idx] - 1;
+  assign read_len_o  = read_len[7:0];
 
   assign idq_oup_pop = read_req_i & read_gnt_o & read_dec_i & (read_len_o == 8'd0);
   always_comb begin
-    cnt_dec = '0;
+    cnt_dec            = '0;
     cnt_dec[cnt_r_idx] = read_req_i & read_gnt_o & read_dec_i;
   end
   always_comb begin
-    cnt_set = '0;
+    cnt_set               = '0;
     cnt_set[cnt_free_idx] = alloc_req_i & alloc_gnt_o;
   end
   always_comb begin
-    err_d = err_q;
+    err_d      = err_q;
     read_err_o = err_q[cnt_r_idx];
     if (read_req_i && read_gnt_o && read_set_err_i) begin
       err_d[cnt_r_idx] = 1'b1;
-      read_err_o = 1'b1;
+      read_err_o       = 1'b1;
     end
     if (alloc_req_i && alloc_gnt_o) begin
       err_d[cnt_free_idx] = 1'b0;
