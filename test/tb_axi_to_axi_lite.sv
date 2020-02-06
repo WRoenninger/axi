@@ -71,8 +71,8 @@ module tb_axi_to_axi_lite;
     .clk_i      ( clk      ),
     .rst_ni     ( rst      ),
     .testmode_i ( 1'b0     ),
-    .in         ( axi      ),
-    .out        ( axi_lite )
+    .slv        ( axi      ),
+    .mst        ( axi_lite )
   );
 
   typedef axi_test::rand_axi_master #(
