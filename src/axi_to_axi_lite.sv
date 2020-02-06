@@ -13,7 +13,7 @@
 // Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
 // Date:   05.01.2020
 //
-// Description: An AXI to AXI LITE adapter with atomic transaction and burst support.
+// Description: An AXI4+ATOP to AXI4-Lite adapter with atomic transaction and burst support.
 
 module axi_to_axi_lite #(
   parameter int unsigned AxiIdWidth      = 32'd0,
@@ -31,10 +31,10 @@ module axi_to_axi_lite #(
 	input  logic       clk_i,    // Clock
 	input  logic       rst_ni,   // Asynchronous reset active low
   input  logic       test_i,   // Testmode enable
-  // slave port full AXI
+  // slave port full AXI4+ATOP
   input  full_req_t  slv_req_i,
   output full_resp_t slv_resp_o,
-  // master port AXI LITE
+  // master port AXI4-Lite
   output lite_req_t  mst_req_o,
   input  lite_resp_t mst_resp_i
 );
@@ -59,14 +59,14 @@ module axi_to_axi_lite #(
 
   // burst splitter so that the id reflect module has no burst accessing it
   axi_burst_splitter #(
-    .MAX_READ_TXNS  ( AxiMaxReadTxns  ),
-    .MAX_WRITE_TXNS ( AxiMaxWriteTxns ),
-    .AW             ( AxiAddrWidth    ),
-    .DW             ( AxiDataWidth    ),
-    .IW             ( AxiIdWidth      ),
-    .UW             ( AxiUserWidth    ),
-    .req_t          ( full_req_t      ),
-    .resp_t         ( full_resp_t     )
+    .MaxReadTxns  ( AxiMaxReadTxns  ),
+    .MaxWriteTxns ( AxiMaxWriteTxns ),
+    .AddrWidth    ( AxiAddrWidth    ),
+    .DataWidth    ( AxiDataWidth    ),
+    .IdWidth      ( AxiIdWidth      ),
+    .UserWidth    ( AxiUserWidth    ),
+    .req_t        ( full_req_t      ),
+    .resp_t       ( full_resp_t     )
   ) i_axi_burst_splitter (
     .clk_i  ( clk_i  ),
     .rst_ni ( rst_ni ),
@@ -248,8 +248,8 @@ module axi_to_axi_lite_intf #(
   input logic     clk_i,
   input logic     rst_ni,
   input logic     testmode_i,
-  AXI_BUS.Slave   in,
-  AXI_LITE.Master out
+  AXI_BUS.Slave   slv,
+  AXI_LITE.Master mst
 );
   typedef logic [AxiIdWidth-1:0]       id_t;
   typedef logic [AxiAddrWidth-1:0]   addr_t;
@@ -278,11 +278,11 @@ module axi_to_axi_lite_intf #(
   lite_req_t  lite_req;
   lite_resp_t lite_resp;
 
-  `AXI_ASSIGN_TO_REQ         ( full_req,  in        )
-  `AXI_ASSIGN_FROM_RESP      ( in      ,  full_resp )
+  `AXI_ASSIGN_TO_REQ         ( full_req,  slv       )
+  `AXI_ASSIGN_FROM_RESP      ( slv     ,  full_resp )
 
-  `AXI_LITE_ASSIGN_FROM_REQ  ( out      , lite_req  )
-  `AXI_LITE_ASSIGN_TO_RESP   ( lite_resp, out       )
+  `AXI_LITE_ASSIGN_FROM_REQ  ( mst      , lite_req  )
+  `AXI_LITE_ASSIGN_TO_RESP   ( lite_resp, mst       )
 
   axi_to_axi_lite #(
     .AxiIdWidth      ( AxiIdWidth      ),
@@ -300,10 +300,10 @@ module axi_to_axi_lite_intf #(
     .clk_i      ( clk_i      ),   // Clock
     .rst_ni     ( rst_ni     ),   // Asynchronous reset active low
     .test_i     ( testmode_i ),   // Testmode enable
-    // slave port full AXI
+    // slave port full AXI4+ATOP
     .slv_req_i  ( full_req   ),
     .slv_resp_o ( full_resp  ),
-    // master port AXI LITE
+    // master port AXI4-Lite
     .mst_req_o  ( lite_req   ),
     .mst_resp_i ( lite_resp  )
   );
