@@ -125,6 +125,7 @@ module tb_axi_to_axi_lite;
     repeat (4) @(posedge clk);
     done = 1'b1;
     repeat (4) @(posedge clk);
+    $info("All Bursts converted to AXI LITE: Success");
     $stop();
   end
 
