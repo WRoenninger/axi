@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Spec) but the slave can accept a W beat in the same cycle as the corresponding AW beat.
   Additionally, `axi_err_slv` got a parameter `ATOPs` that defines if it supports atomic operations.
 - `axi_to_axi_lite`: Rework module to structs and add burst support.
+- `axi_decerr_slv` has been replaced by a more generic `axi_err_slv`, which takes the kind of error
+  as parameter.
 
 ### Fixed
 
