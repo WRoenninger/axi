@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   as parameter.  This `axi_err_slv` no longer supports ATOPs, meaning you must place an
   `axi_atop_filter` in front of it if you need it to handle ATOPs.
 
+- `axi_decerr_slv` can now generate either `SLVERR` or `DECERR` error responses, via the Resp
+parameter. It has been renamed accordingly, to `axi_err_slv`.
+
 ### Fixed
 
 
