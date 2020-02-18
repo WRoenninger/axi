@@ -68,12 +68,12 @@ module axi_to_axi_lite #(
     .req_t        ( full_req_t      ),
     .resp_t       ( full_resp_t     )
   ) i_axi_burst_splitter (
-    .clk_i  ( clk_i  ),
-    .rst_ni ( rst_ni ),
-    .req_i  ( filtered_req  ),
-    .resp_o ( filtered_resp ),
-    .req_o  ( splitted_req  ),
-    .resp_i ( splitted_resp )
+    .clk_i      ( clk_i         ),
+    .rst_ni     ( rst_ni        ),
+    .slv_req_i  ( filtered_req  ),
+    .slv_resp_o ( filtered_resp ),
+    .mst_req_o  ( splitted_req  ),
+    .mst_resp_i ( splitted_resp )
   );
 
   // ID reflect module handles the conversion from the full AXI to AXI lite on the wireing
@@ -96,6 +96,11 @@ module axi_to_axi_lite #(
     .mst_resp_i ( mst_resp_i    )
   );
 endmodule
+
+// Description: This module does the translation of the full AXI4+ATOP to AXI4-Lite signals.
+//              It reflects the ID of the incoming transaction and crops all signals not used
+//              in AXI4-Lite. It requires that incoming AXI4+ATOP transactions have a
+//              `axi_pkg::len_t` of `'0` and an `axi_pkg::atop_t` of `'0`.
 
 module axi_to_axi_lite_id_reflect #(
   parameter int unsigned AxiIdWidth      = 32'd0,
@@ -210,7 +215,6 @@ module axi_to_axi_lite_id_reflect #(
   // Assertions
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef VCS
   `ifndef SYNTHESIS
   aw_atop: assume property( @(posedge clk_i) disable iff (~rst_ni)
                         slv_req_i.aw_valid |-> (slv_req_i.aw.atop == '0)) else
@@ -224,7 +228,6 @@ module axi_to_axi_lite_id_reflect #(
   ar_axi_len: assume property( @(posedge clk_i) disable iff (~rst_ni)
                         slv_req_i.ar_valid |-> (slv_req_i.ar.len == '0)) else
     $fatal(1, $sformatf("AR request length has to be zero. Value observed: %0b", slv_req_i.ar.len));
-  `endif
   `endif
   `endif
   // pragma translate_on
@@ -297,9 +300,9 @@ module axi_to_axi_lite_intf #(
     .lite_req_t      ( lite_req_t      ),
     .lite_resp_t     ( lite_resp_t     )
   ) i_axi_to_axi_lite (
-    .clk_i      ( clk_i      ),   // Clock
-    .rst_ni     ( rst_ni     ),   // Asynchronous reset active low
-    .test_i     ( testmode_i ),   // Testmode enable
+    .clk_i      ( clk_i      ),
+    .rst_ni     ( rst_ni     ),
+    .test_i     ( testmode_i ),
     // slave port full AXI4+ATOP
     .slv_req_i  ( full_req   ),
     .slv_resp_o ( full_resp  ),
@@ -310,7 +313,6 @@ module axi_to_axi_lite_intf #(
   // Assertions, check params
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef VCS
   `ifndef SYNTHESIS
   initial begin
     assume (AxiIdWidth   > 0) else $fatal(1, "AxiIdWidth has to be > 0");
@@ -318,7 +320,6 @@ module axi_to_axi_lite_intf #(
     assume (AxiDataWidth > 0) else $fatal(1, "AxiDataWidth has to be > 0");
     assume (AxiUserWidth > 0) else $fatal(1, "AxiUserWidth has to be > 0");
   end
-  `endif
   `endif
   `endif
   // pragma translate_on
