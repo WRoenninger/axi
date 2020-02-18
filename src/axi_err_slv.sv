@@ -94,7 +94,7 @@ module axi_err_slv #(
     .full_o     ( w_fifo_full       ),
     .empty_o    ( w_fifo_empty      ),
     .usage_o    (                   ),
-    .data_i     ( slv_req_i.aw.id     ),
+    .data_i     ( slv_req_i.aw.id   ),
     .push_i     ( w_fifo_push       ),
     .data_o     ( w_fifo_data       ),
     .pop_i      ( w_fifo_pop        )
