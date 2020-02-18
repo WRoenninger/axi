@@ -91,7 +91,7 @@ module tb_axi_to_axi_lite;
   ) rand_axi_master_t;
   typedef axi_test::rand_axi_lite_slave #(.AW(AW), .DW(DW), .TA(TA), .TT(TT)) rand_axi_lite_slv_t;
 
-  rand_axi_lite_slv_t axi_lite_drv = new(axi_lite_dv);
+  rand_axi_lite_slv_t axi_lite_drv = new(axi_lite_dv, "rand_axi_lite_slave");
   rand_axi_master_t   axi_drv      = new(axi_dv);
 
   initial begin
@@ -120,12 +120,12 @@ module tb_axi_to_axi_lite;
                                       axi_pkg::WBACK_RWALLOCATE);
     axi_drv.reset();
     @(posedge rst);
-    axi_drv.run(1000, 1000);
+    axi_drv.run(1000, 2000);
 
     repeat (4) @(posedge clk);
     done = 1'b1;
+    $info("All AXI4+ATOP Bursts converted to AXI4-Lite");
     repeat (4) @(posedge clk);
-    $info("All AXI4+ATOP Bursts converted to AXI4-Lite: Success");
     $stop();
   end
 
@@ -134,6 +134,41 @@ module tb_axi_to_axi_lite;
     @(posedge clk);
 
     axi_lite_drv.run();
+  end
+
+  initial begin : proc_count_lite_beats
+    automatic longint aw_cnt = 0;
+    automatic longint w_cnt  = 0;
+    automatic longint b_cnt  = 0;
+    automatic longint ar_cnt = 0;
+    automatic longint r_cnt  = 0;
+    @(posedge rst);
+    while (!done) begin
+      @(posedge clk);
+      #TT;
+      if (axi_lite.aw_valid && axi_lite.aw_ready) begin
+        aw_cnt++;
+      end
+      if (axi_lite.w_valid && axi_lite.w_ready) begin
+        w_cnt++;
+      end
+      if (axi_lite.b_valid && axi_lite.b_ready) begin
+        b_cnt++;
+      end
+      if (axi_lite.ar_valid && axi_lite.ar_ready) begin
+        ar_cnt++;
+      end
+      if (axi_lite.r_valid && axi_lite.r_ready) begin
+        r_cnt++;
+      end
+    end
+    assert (aw_cnt == w_cnt && w_cnt == b_cnt);
+    assert (ar_cnt == r_cnt);
+    $display("AXI4-Lite AW count: %0d", aw_cnt );
+    $display("AXI4-Lite  W count: %0d", w_cnt  );
+    $display("AXI4-Lite  B count: %0d", b_cnt  );
+    $display("AXI4-Lite AR count: %0d", ar_cnt );
+    $display("AXI4-Lite  R count: %0d", r_cnt  );
   end
 
 endmodule
