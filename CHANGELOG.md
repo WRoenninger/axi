@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Additionally, `axi_err_slv` got a parameter `ATOPs` that defines if it supports atomic operations.
 - `axi_to_axi_lite`: Rework module to structs and add burst support.
 - `axi_decerr_slv` has been replaced by a more generic `axi_err_slv`, which takes the kind of error
-  as parameter.
+  as parameter.  This `axi_err_slv` no longer supports ATOPs, meaning you must place an
+  `axi_atop_filter` in front of it if you need it to handle ATOPs.
 
 ### Fixed
 

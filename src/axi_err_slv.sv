@@ -94,7 +94,7 @@ module axi_err_slv #(
     .full_o     ( w_fifo_full       ),
     .empty_o    ( w_fifo_empty      ),
     .usage_o    (                   ),
-    .data_i     ( err_req.aw.id     ),
+    .data_i     ( slv_req_i.aw.id     ),
     .push_i     ( w_fifo_push       ),
     .data_o     ( w_fifo_data       ),
     .pop_i      ( w_fifo_pop        )
@@ -106,9 +106,9 @@ module axi_err_slv #(
     b_fifo_push       = 1'b0;
     if (!w_fifo_empty && !b_fifo_full) begin
       // eat the beats
-      err_resp.w_ready = 1'b1;
+      slv_resp_o.w_ready = 1'b1;
       // on the last w transaction
-      if (err_req.w_valid && err_req.w.last) begin
+      if (slv_req_i.w_valid && slv_req_i.w.last) begin
         w_fifo_pop    = 1'b1;
         b_fifo_push   = 1'b1;
       end
@@ -140,9 +140,9 @@ module axi_err_slv #(
     err_resp.b.resp   = Resp;
     err_resp.b_valid  = 1'b0;
     if (!b_fifo_empty) begin
-      err_resp.b_valid = 1'b1;
+      slv_resp_o.b_valid = 1'b1;
       // b transaction
-      b_fifo_pop = err_req.b_ready;
+      b_fifo_pop = slv_req_i.b_ready;
     end
   end
 
@@ -154,8 +154,8 @@ module axi_err_slv #(
   assign err_resp.ar_ready  = ~r_fifo_full;
 
   // fifo data assignment
-  assign r_fifo_inp.id  = err_req.ar.id;
-  assign r_fifo_inp.len = err_req.ar.len;
+  assign r_fifo_inp.id  = slv_req_i.ar.id;
+  assign r_fifo_inp.len = slv_req_i.ar.len;
 
   fifo_v3 #(
     .FALL_THROUGH ( 1'b0      ),
@@ -193,10 +193,10 @@ module axi_err_slv #(
     err_resp.r_valid  = 1'b0;
     // control
     if (r_busy_q) begin
-      err_resp.r_valid = 1'b1;
-      err_resp.r.last = (r_current_beat == '0);
+      slv_resp_o.r_valid = 1'b1;
+      slv_resp_o.r.last = (r_current_beat == '0);
       // r transaction
-      if (err_req.r_ready) begin
+      if (slv_req_i.r_ready) begin
         r_cnt_en = 1'b1;
         if (r_current_beat == '0) begin
           r_busy_d    = 1'b0;
