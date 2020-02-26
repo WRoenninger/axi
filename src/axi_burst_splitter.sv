@@ -8,7 +8,11 @@
 // this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
-
+//
+// Authors: Andreas Kurth       <akurth@iis.ee.ethz.ch>
+//          Florian Zaruba      <zarubaf@iis.ee.ethz.ch>
+//          Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+//
 // Description: This module splits bursted AXI4 transfers into single
 //              beat transactions. It is not capable of handling atomic operations and
 //              `axi_pkg::BURST_WRAP` transfers. Use of the `axi_atop_filter` is
