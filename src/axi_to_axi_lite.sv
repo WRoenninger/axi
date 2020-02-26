@@ -9,9 +9,11 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// File:   axi_to_axi_lite.sv
-// Author: Wolfgang Roenninger <wroennin@student.ethz.ch>
-// Date:   05.01.2020
+// File:    axi_to_axi_lite.sv
+// Authors: Fabian Schuiki      <fschuiki@iis.ee.ethz.ch>
+//          Andreas Kurth       <akurth@iis.ee.ethz.ch>
+//          Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+// Date:    05.01.2020
 //
 // Description: An AXI4+ATOP to AXI4-Lite adapter with atomic transaction and burst support.
 
@@ -23,10 +25,10 @@ module axi_to_axi_lite #(
   parameter int unsigned AxiMaxWriteTxns = 32'd0,
   parameter int unsigned AxiMaxReadTxns  = 32'd0,
   parameter bit          FallThrough     = 1'b1,  // FIFOs in Fall through mode in ID reflect
-  parameter type full_req_t  = logic,
-  parameter type full_resp_t = logic,
-  parameter type lite_req_t  = logic,
-  parameter type lite_resp_t = logic
+  parameter type         full_req_t      = logic,
+  parameter type         full_resp_t     = logic,
+  parameter type         lite_req_t      = logic,
+  parameter type         lite_resp_t     = logic
 ) (
 	input  logic       clk_i,    // Clock
 	input  logic       rst_ni,   // Asynchronous reset active low
@@ -215,20 +217,18 @@ module axi_to_axi_lite_id_reflect #(
   // Assertions
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef SYNTHESIS
   aw_atop: assume property( @(posedge clk_i) disable iff (~rst_ni)
                         slv_req_i.aw_valid |-> (slv_req_i.aw.atop == '0)) else
-    $fatal(1, $sformatf("Module does not support atomics. Value observed: %0b", slv_req_i.aw.atop));
+    $fatal(1, "Module does not support atomics. Value observed: %0b", slv_req_i.aw.atop);
   aw_axi_len: assume property( @(posedge clk_i) disable iff (~rst_ni)
                         slv_req_i.aw_valid |-> (slv_req_i.aw.len == '0)) else
-    $fatal(1, $sformatf("AW request length has to be zero. Value observed: %0b", slv_req_i.aw.len));
+    $fatal(1, "AW request length has to be zero. Value observed: %0b", slv_req_i.aw.len);
   w_axi_last: assume property( @(posedge clk_i) disable iff (~rst_ni)
                         slv_req_i.w_valid |-> (slv_req_i.w.last == 1'b1)) else
-    $fatal(1, $sformatf("W last signal has to be one. Value observed: %0b", slv_req_i.w.last));
+    $fatal(1, "W last signal has to be one. Value observed: %0b", slv_req_i.w.last);
   ar_axi_len: assume property( @(posedge clk_i) disable iff (~rst_ni)
                         slv_req_i.ar_valid |-> (slv_req_i.ar.len == '0)) else
-    $fatal(1, $sformatf("AR request length has to be zero. Value observed: %0b", slv_req_i.ar.len));
-  `endif
+    $fatal(1, "AR request length has to be zero. Value observed: %0b", slv_req_i.ar.len);
   `endif
   // pragma translate_on
 endmodule
@@ -313,14 +313,12 @@ module axi_to_axi_lite_intf #(
   // Assertions, check params
   // pragma translate_off
   `ifndef VERILATOR
-  `ifndef SYNTHESIS
   initial begin
     assume (AxiIdWidth   > 0) else $fatal(1, "AxiIdWidth has to be > 0");
     assume (AxiAddrWidth > 0) else $fatal(1, "AxiAddrWidth has to be > 0");
     assume (AxiDataWidth > 0) else $fatal(1, "AxiDataWidth has to be > 0");
     assume (AxiUserWidth > 0) else $fatal(1, "AxiUserWidth has to be > 0");
   end
-  `endif
   `endif
   // pragma translate_on
 endmodule
