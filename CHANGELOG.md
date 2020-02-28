@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - `axi_burst_splitter`: Split AXI4 bursts to single-beat transactions.
+- `axi_dw_converter`: A data width converter between AXI interfaces of any data width.
+- `axi_dw_downsizer`: A data width converter between a narrow AXI master and a wider AXI slave.
+- `axi_dw_upsizer`: A data width converter between a wide AXI master and a narrower AXI slave.
 
 ### Changed
 - `axi_lite_to_apb`: The `psel` field of the `apb_req_t` struct is now a single bit.  That is, every
@@ -20,6 +23,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Spec) but the slave can accept a W beat in the same cycle as the corresponding AW beat.
   Additionally, `axi_err_slv` got a parameter `ATOPs` that defines if it supports atomic operations.
 - `axi_to_axi_lite`: Rework module to structs and add burst support.
+
+- `axi_decerr_slv` can now generate either `SLVERR` or `DECERR` error responses, via the Resp
+parameter. It has been renamed accordingly, to `axi_err_slv`.
 
 ### Fixed
 

@@ -4,6 +4,7 @@ package:
     - "Andreas Kurth <akurth@iis.ee.ethz.ch>" # current maintainer
     - "Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"
     - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
+    - "Matheus Cavalcante <matheusd@iis.ee.ethz.ch>"
     - "Wolfgang Roenninger <wroennin@ethz.ch>"
 
 dependencies:
@@ -29,6 +30,8 @@ sources:
   - src/axi_cut.sv
   - src/axi_delayer.sv
   - src/axi_demux.sv
+  - src/axi_dw_downsizer.sv
+  - src/axi_dw_upsizer.sv
   - src/axi_id_prepend.sv
   - src/axi_join.sv
   - src/axi_lite_demux.sv
@@ -40,6 +43,7 @@ sources:
   - src/axi_modify_address.sv
   - src/axi_mux.sv
   # Level 3
+  - src/axi_dw_converter.sv
   - src/axi_err_slv.sv
   - src/axi_multicut.sv
   - src/axi_to_axi_lite.sv
@@ -60,6 +64,8 @@ sources:
       - test/tb_axi_atop_filter.sv
       - test/tb_axi_cdc.sv
       - test/tb_axi_delayer.sv
+      - test/tb_axi_dw_downsizer.sv
+      - test/tb_axi_dw_upsizer.sv
       - test/tb_axi_lite_to_apb.sv
       - test/tb_axi_lite_to_axi.sv
       - test/tb_axi_lite_mailbox.sv

@@ -71,8 +71,8 @@ module axi_lite_xbar #(
     logic                   dec_aw_error;
     logic                   dec_ar_error;
 
-    full_req_t  decerr_req;
-    full_resp_t decerr_resp;
+    full_req_t  err_req;
+    full_resp_t err_resp;
 
     addr_decode #(
       .NoIndices  ( Cfg.NoMstPorts  ),
@@ -173,8 +173,8 @@ module axi_lite_xbar #(
     ) i_dec_err_conv (
       .slv_req_lite_i  ( slv_reqs[i][Cfg.NoMstPorts]  ),
       .slv_resp_lite_o ( slv_resps[i][Cfg.NoMstPorts] ),
-      .mst_req_o       ( decerr_req                   ),
-      .mst_resp_i      ( decerr_resp                  )
+      .mst_req_o       ( err_req                      ),
+      .mst_resp_i      ( err_resp                     )
     );
 
     axi_err_slv #(
@@ -190,8 +190,8 @@ module axi_lite_xbar #(
       .rst_ni     ( rst_ni      ),  // Asynchronous reset active low
       .test_i     ( test_i      ),  // Testmode enable
       // slave port
-      .slv_req_i  ( decerr_req  ),
-      .slv_resp_o ( decerr_resp )
+      .slv_req_i  ( err_req     ),
+      .slv_resp_o ( err_resp    )
     );
   end
 
